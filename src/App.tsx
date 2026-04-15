@@ -18,7 +18,7 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const hideNavPaths = ["/login", "/advisory"];
+const hideNavPaths = ["/login", "/advisory", "/profile", "/admin"];
 
 const AppLayout = () => {
   const location = useLocation();
