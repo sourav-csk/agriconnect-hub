@@ -10,10 +10,13 @@ const Dashboard = () => {
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-extrabold">🌾 AgriConnect</h1>
-          <p className="text-muted-foreground text-sm">Namaste, Farmer!</p>
-        </div>
+        <button onClick={() => navigate("/profile")} className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xl">👨‍🌾</div>
+          <div>
+            <h1 className="text-lg font-extrabold leading-tight">🌾 AgriConnect</h1>
+            <p className="text-muted-foreground text-xs">Namaste, Farmer!</p>
+          </div>
+        </button>
         <button className="relative w-10 h-10 rounded-full bg-muted flex items-center justify-center">
           <Bell className="w-5 h-5" />
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full text-[10px] text-destructive-foreground flex items-center justify-center font-bold">3</span>
