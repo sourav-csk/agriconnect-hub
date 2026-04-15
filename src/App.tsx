@@ -12,6 +12,8 @@ import ChatRoom from "@/pages/ChatRoom";
 import Advisory from "@/pages/Advisory";
 import Logistics from "@/pages/Logistics";
 import Login from "@/pages/Login";
+import FarmerProfile from "@/pages/FarmerProfile";
+import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,8 @@ const AppLayout = () => {
         <Route path="/chat/:id" element={<ChatRoom />} />
         <Route path="/advisory" element={<Advisory />} />
         <Route path="/logistics" element={<Logistics />} />
+        <Route path="/profile" element={<FarmerProfile />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!hideNav && <BottomNav />}
