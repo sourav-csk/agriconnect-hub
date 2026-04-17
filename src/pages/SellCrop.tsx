@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Camera, Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, Sparkles, X, Loader2 } from "lucide-react";
 import { suggestedPrices } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,29 @@ const SellCrop = () => {
   const [category, setCategory] = useState("Grains");
   const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image too large", description: "Max 5MB allowed", variant: "destructive" });
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removePhoto = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleCropNameChange = (value: string) => {
     setCropName(value);
@@ -37,6 +60,22 @@ const SellCrop = () => {
       return;
     }
     setLoading(true);
+
+    let image_url: string | null = null;
+    if (imageFile) {
+      setUploading(true);
+      const ext = imageFile.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("crop-photos").upload(path, imageFile);
+      setUploading(false);
+      if (upErr) {
+        setLoading(false);
+        toast({ title: "Image upload failed", description: upErr.message, variant: "destructive" });
+        return;
+      }
+      image_url = supabase.storage.from("crop-photos").getPublicUrl(path).data.publicUrl;
+    }
+
     const { error } = await supabase.from("crop_listings").insert({
       user_id: user.id,
       crop_name: cropName,
@@ -44,6 +83,7 @@ const SellCrop = () => {
       expected_price: Number(price),
       location,
       category,
+      image_url,
     });
     setLoading(false);
 
@@ -53,6 +93,7 @@ const SellCrop = () => {
       toast({ title: "✅ Crop Listed!", description: `${cropName} listed successfully on marketplace.` });
       setCropName(""); setQuantity(""); setPrice(""); setLocation("");
       setSuggestedPrice(null);
+      removePhoto();
     }
   };
 
@@ -61,10 +102,36 @@ const SellCrop = () => {
       <h1 className="text-2xl font-extrabold mb-6">📦 Sell Your Crop</h1>
 
       <div className="space-y-4">
-        <button className="w-full h-36 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-2 text-muted-foreground active:bg-muted transition-colors">
-          <Camera className="w-10 h-10" />
-          <span className="font-semibold">Add Crop Photo</span>
-        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        {imagePreview ? (
+          <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-border">
+            <img src={imagePreview} alt="Crop preview" className="w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={removePhoto}
+              className="absolute top-2 right-2 bg-background/90 rounded-full p-1.5 shadow-md"
+              aria-label="Remove photo"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handlePhotoClick}
+            className="w-full h-36 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-2 text-muted-foreground active:bg-muted transition-colors"
+          >
+            <Camera className="w-10 h-10" />
+            <span className="font-semibold">Add Crop Photo</span>
+          </button>
+        )}
 
         <div>
           <label className="block text-sm font-bold mb-1">Crop Name</label>
@@ -109,7 +176,7 @@ const SellCrop = () => {
         </div>
 
         <button onClick={handleSubmit} disabled={loading} className="w-full bg-primary text-primary-foreground py-4 rounded-2xl text-lg font-extrabold active:scale-[0.98] transition-transform shadow-md disabled:opacity-50">
-          {loading ? "Listing..." : "List Crop for Sale"}
+          {loading ? (uploading ? "Uploading photo..." : "Listing...") : "List Crop for Sale"}
         </button>
       </div>
     </div>
