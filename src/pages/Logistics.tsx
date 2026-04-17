@@ -1,23 +1,65 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Request {
+  id: string;
+  pickup: string;
+  delivery: string;
+  weight: number;
+  preferred_date: string;
+  status: string;
+}
 
 const Logistics = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [pickup, setPickup] = useState("");
   const [delivery, setDelivery] = useState("");
   const [weight, setWeight] = useState("");
   const [date, setDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [requests, setRequests] = useState<Request[]>([]);
 
-  const handleSubmit = () => {
+  const loadRequests = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("transport_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setRequests(data || []);
+  };
+
+  useEffect(() => {
+    loadRequests();
+  }, [user]);
+
+  const handleSubmit = async () => {
+    if (!user) return;
     if (!pickup || !delivery || !weight || !date) {
       toast({ title: "Please fill all fields", variant: "destructive" });
       return;
     }
-    toast({ title: "🚛 Transport Requested!", description: "You will be contacted by a transporter soon." });
+    setLoading(true);
+    const { error } = await supabase.from("transport_requests").insert({
+      user_id: user.id,
+      pickup,
+      delivery,
+      weight: Number(weight),
+      preferred_date: date,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "🚛 Transport Requested!", description: "Nearby transporters will be notified." });
     setPickup(""); setDelivery(""); setWeight(""); setDate("");
+    loadRequests();
   };
 
   return (
@@ -55,11 +97,28 @@ const Logistics = () => {
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
             className="w-full bg-card border border-border rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
-        <button onClick={handleSubmit}
-          className="w-full bg-primary text-primary-foreground py-4 rounded-2xl text-lg font-extrabold active:scale-[0.98] transition-transform shadow-md">
-          Request Transport
+        <button onClick={handleSubmit} disabled={loading}
+          className="w-full bg-primary text-primary-foreground py-4 rounded-2xl text-lg font-extrabold active:scale-[0.98] transition-transform shadow-md disabled:opacity-50">
+          {loading ? "Requesting..." : "Request Transport"}
         </button>
       </div>
+
+      {requests.length > 0 && (
+        <div className="mt-8">
+          <h2 className="font-extrabold text-lg mb-3">My Requests</h2>
+          <div className="space-y-2">
+            {requests.map((r) => (
+              <div key={r.id} className="bg-card border border-border rounded-xl p-3 text-sm">
+                <div className="flex justify-between mb-1">
+                  <p className="font-bold">{r.pickup} → {r.delivery}</p>
+                  <span className="text-xs font-bold bg-primary/15 text-primary px-2 py-0.5 rounded-full capitalize">{r.status}</span>
+                </div>
+                <p className="text-muted-foreground text-xs">{r.weight} quintals · {new Date(r.preferred_date).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

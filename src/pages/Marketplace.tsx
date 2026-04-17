@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface ListingWithProfile {
   id: string;
+  user_id: string;
   crop_name: string;
   quantity: number;
   unit: string;
@@ -89,7 +90,7 @@ const Marketplace = () => {
                 <span className="text-sm text-muted-foreground">{listing.quantity} {listing.unit}</span>
                 <span className="font-extrabold text-primary">₹{listing.expected_price}/{listing.unit}</span>
               </div>
-              <button onClick={() => navigate("/chat")} className="w-full mt-3 bg-primary/10 text-primary font-bold py-2 rounded-xl text-sm active:scale-[0.98] transition-transform">
+              <button onClick={() => navigate(`/chat/${listing.user_id}`)} className="w-full mt-3 bg-primary/10 text-primary font-bold py-2 rounded-xl text-sm active:scale-[0.98] transition-transform">
                 💬 Contact Farmer
               </button>
             </div>
