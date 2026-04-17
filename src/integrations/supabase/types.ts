@@ -131,6 +131,42 @@ export type Database = {
         }
         Relationships: []
       }
+      transport_requests: {
+        Row: {
+          created_at: string
+          delivery: string
+          id: string
+          pickup: string
+          preferred_date: string
+          status: string
+          updated_at: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          delivery: string
+          id?: string
+          pickup: string
+          preferred_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          delivery?: string
+          id?: string
+          pickup?: string
+          preferred_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
